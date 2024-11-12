@@ -1,3 +1,5 @@
+import 'https://cdn.jsdelivr.net/npm/tabulator-tables@5.0.7/dist/js/tabulator.min.js';
+
 class TabulatorTableWidget extends HTMLElement {
   constructor() {
     super();

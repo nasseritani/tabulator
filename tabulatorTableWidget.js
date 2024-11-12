@@ -45,4 +45,4 @@ class TabulatorTableWidget extends HTMLElement {
   }
 }
 
-customElements.define("tabulator-table-widget", TabulatorTableWidget);
+customElements.define("tab", TabulatorTableWidget);

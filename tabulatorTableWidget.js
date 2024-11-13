@@ -1,48 +1,64 @@
-import 'https://cdn.jsdelivr.net/npm/tabulator-tables@5.0.7/dist/js/tabulator.min.js';
+const tabLink = document.createElement('link');
+tabLink.rel = 'stylesheet';
+tabLink.href = 'https://unpkg.com/tabulator-tables@5.3.3/dist/css/tabulator.min.css';
+document.head.appendChild(tabLink);
 
-class TabulatorTableWidget extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-  }
+const tabScript = document.createElement('script');
+tabScript.src = 'https://unpkg.com/tabulator-tables@5.3.3/dist/js/tabulator.min.js';
+document.head.appendChild(tabScript);
 
-  connectedCallback() {
-    const container = document.createElement("div");
-    container.setAttribute("id", "table");
-    this.shadowRoot.appendChild(container);
+(function () {
+    let template = document.createElement("template");
+    template.innerHTML = ``;
 
-    const defaultData = this.tableData || [
-      { id: 1, name: "John Doe", age: 29, gender: "Male", rating: 4, date: "2023-01-01" },
-      { id: 2, name: "Jane Smith", age: 32, gender: "Female", rating: 5, date: "2023-05-10" }
-    ];
+    class TabulatorWidget extends HTMLElement {
+        constructor() {
+            super();
+            let shadowRoot = this.attachShadow({ mode: "open" });
+            shadowRoot.appendChild(template.content.cloneNode(true));
+            this._props = {};
+        }
 
-    const table = new Tabulator(container, {
-      data: defaultData,
-      layout: "fitColumns",
-      columns: [
-        { title: "ID", field: "id", sorter: "number", width: 100 },
-        { title: "Name", field: "name", editor: "input" },
-        { title: "Age", field: "age", sorter: "number", editor: "number" },
-        { title: "Gender", field: "gender", editor: "select", editorParams: { values: ["Male", "Female"] } },
-        { title: "Rating", field: "rating", sorter: "number", editor: "star", hozAlign: "center" },
-        { title: "Date", field: "date", sorter: "date", editor: "input", editorParams: { elementAttributes: { type: "date" } } }
-      ]
-    });
+        async connectedCallback() {
+            this.initTable();
+        }
 
-    this.refreshData = (newData) => {
-      table.replaceData(newData);
-    };
-  }
+        async initTable() {
+            if (this.shadowRoot.querySelector("#tabulator")) return; // Prevent multiple initializations
 
-  static get observedAttributes() {
-    return ["tableData"];
-  }
+            // Create a div for Tabulator
+            const tableDiv = document.createElement("div");
+            tableDiv.id = "tabulator";
+            this.shadowRoot.appendChild(tableDiv);
 
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (name === "tableData") {
-      this.refreshData(JSON.parse(newValue));
+            // Initialize Tabulator table
+            this.table = new Tabulator(tableDiv, {
+                layout: "fitColumns",
+                responsiveLayout: "hide",
+                data: this._props.tableData || [],
+                columns: this._props.columns || [
+                    { title: "ID", field: "id", width: 100 },
+                    { title: "Name", field: "name", width: 150 },
+                    { title: "Age", field: "age", align: "left", formatter: "progress" },
+                ],
+            });
+        }
+
+        setValue() {
+            this.dispatchEvent(new CustomEvent("propertiesChanged", {
+                detail: { properties: { tableData: [] } }
+            }));
+        }
+
+        onCustomWidgetBeforeUpdate(changedProperties) {
+            this._props = { ...this._props, ...changedProperties };
+        }
+
+        onCustomWidgetAfterUpdate(changedProperties) {
+            this.initTable();
+            this.setValue();
+        }
     }
-  }
-}
 
-customElements.define("tab", TabulatorTableWidget);
+    customElements.define("com-tabulator-widget", TabulatorWidget);
+})();
